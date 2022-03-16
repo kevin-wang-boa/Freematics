@@ -28,6 +28,17 @@
 #if ENABLE_OLED
 #include "FreematicsOLED.h"
 #endif
+#include <WiFi.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#include <AsyncElegantOTA.h>
+
+#define mySSID "airship01"
+#define myPASSWORD "Airship_BOA!#"
+
+const char* ssid = mySSID;
+const char* password = myPASSWORD;
+AsyncWebServer server(80);
 
 // states
 #define STATE_STORAGE_READY 0x1
@@ -1275,6 +1286,32 @@ void setup()
 #endif
     // initialize USB serial
     Serial.begin(115200);
+#pragma region 
+//OTA Functions
+WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  Serial.println("");
+
+  // Wait for connection
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.print("Connected to ");
+  Serial.println(ssid);
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "text/plain", "Hi! BOA is here for everything you need.");
+  });
+
+  AsyncElegantOTA.begin(&server);    // Start ElegantOTA
+  server.begin();
+  Serial.println("HTTP server started");
+
+#pragma endregion
 
     // init LED pin
 #ifdef PIN_LED
@@ -1355,6 +1392,10 @@ void setup()
     // init BLE
     ble_init();
 #endif
+
+
+
+
 
     // initialize components
     initialize();
